@@ -1,0 +1,836 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="TANKLOG">
+<meta name="theme-color" content="#080b0f">
+<title>TANKLOG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+
+<style>
+:root {
+  --bg-0:#080b0f; --bg-1:#0e1318; --bg-2:#141b22; --bg-3:#1c2530;
+  --bg-card:#111820; --border:#1e2d3d; --border-bright:#2a3f55;
+  --accent:#e8a020; --accent-dim:#a06a10; --accent-glow:rgba(232,160,32,.15);
+  --accent-2:#3b8ecf; --accent-2-dim:#1c4a70;
+  --green:#2dba74; --green-dim:#164a30;
+  --red:#e05a5a; --red-dim:#4a1c1c;
+  --text-0:#f0f4f8; --text-1:#8ca0b4; --text-2:#4a6070;
+  --mono:'Space Mono',monospace; --sans:'Syne',sans-serif;
+  --radius:10px; --radius-lg:16px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth;-webkit-tap-highlight-color:transparent}
+
+body{
+  background:var(--bg-0);color:var(--text-0);font-family:var(--sans);
+  min-height:100vh;min-height:100dvh;
+  padding-bottom:calc(68px + var(--safe-bottom));
+  background-image:
+    radial-gradient(ellipse 80% 40% at 50% -10%,rgba(232,160,32,.06) 0%,transparent 70%),
+    repeating-linear-gradient(90deg,transparent 0,transparent 39px,rgba(255,255,255,.015) 39px,rgba(255,255,255,.015) 40px),
+    repeating-linear-gradient(0deg,transparent 0,transparent 39px,rgba(255,255,255,.015) 39px,rgba(255,255,255,.015) 40px);
+}
+
+/* ── HEADER */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(8,11,15,.94);backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  padding:0 1.25rem;padding-top:env(safe-area-inset-top,0);
+  display:flex;align-items:center;justify-content:space-between;
+  height:58px;
+}
+.logo{
+  font-family:var(--mono);font-size:.85rem;font-weight:700;
+  letter-spacing:.18em;color:var(--accent);
+  display:flex;align-items:center;gap:9px;
+}
+.logo-icon{
+  width:26px;height:26px;background:var(--accent);
+  clip-path:polygon(50% 0%,85% 15%,100% 50%,85% 85%,50% 100%,15% 85%,0% 50%,15% 15%);
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;color:var(--bg-0);font-weight:700;
+}
+.header-meta{font-family:var(--mono);font-size:.62rem;color:var(--text-2);text-align:right}
+.header-meta span{color:var(--accent);display:block;margin-top:2px}
+
+/* ── BOTTOM NAV */
+.bottom-nav{
+  position:fixed;bottom:0;left:0;right:0;z-index:200;
+  background:rgba(8,11,15,.97);border-top:1px solid var(--border);
+  backdrop-filter:blur(20px);
+  display:flex;
+  padding-bottom:var(--safe-bottom);
+}
+.nav-btn{
+  flex:1;display:flex;flex-direction:column;align-items:center;
+  justify-content:center;gap:4px;padding:10px 0;
+  font-family:var(--mono);font-size:.5rem;letter-spacing:.1em;
+  color:var(--text-2);background:none;border:none;cursor:pointer;
+  text-transform:uppercase;transition:color .2s;
+  -webkit-tap-highlight-color:transparent;
+}
+.nav-btn svg{width:20px;height:20px;stroke-width:1.6}
+.nav-btn.active{color:var(--accent)}
+.nav-btn.active svg{filter:drop-shadow(0 0 4px rgba(232,160,32,.5))}
+
+/* ── PAGES */
+.page{display:none;animation:fadeUp .25s ease forwards}
+.page.active{display:block}
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LAYOUT */
+main{max-width:900px;margin:0 auto;padding:1.25rem 1rem 1.5rem}
+
+/* ── SECTION LABEL */
+.section-label{
+  font-family:var(--mono);font-size:.58rem;letter-spacing:.22em;
+  color:var(--text-2);text-transform:uppercase;
+  margin-bottom:.85rem;display:flex;align-items:center;gap:10px;
+}
+.section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* ── STAT CARDS */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-bottom:1.5rem}
+@media(min-width:600px){.stats-grid{grid-template-columns:repeat(4,1fr)}}
+
+.stat-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius);padding:1rem 1.1rem;
+  position:relative;overflow:hidden;
+  active-state:none;
+}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px}
+.stat-card.amber::before{background:var(--accent)}
+.stat-card.blue::before{background:var(--accent-2)}
+.stat-card.green::before{background:var(--green)}
+.stat-card.red::before{background:var(--red)}
+
+.stat-label{font-family:var(--mono);font-size:.52rem;letter-spacing:.12em;color:var(--text-2);text-transform:uppercase;margin-bottom:.4rem}
+.stat-value{font-family:var(--mono);font-size:1.15rem;font-weight:700;line-height:1;margin-bottom:.2rem}
+.stat-card.amber .stat-value{color:var(--accent)}
+.stat-card.blue .stat-value{color:var(--accent-2)}
+.stat-card.green .stat-value{color:var(--green)}
+.stat-card.red .stat-value{color:var(--red)}
+.stat-sub{font-family:var(--mono);font-size:.55rem;color:var(--text-2)}
+
+/* ── CHARTS */
+.chart-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:1.25rem;margin-bottom:.75rem;
+}
+.chart-title{font-size:.7rem;font-weight:700;color:var(--text-1);margin-bottom:1rem;font-family:var(--mono);letter-spacing:.05em}
+.bar-chart{display:flex;flex-direction:column;gap:7px}
+.bar-row{display:flex;align-items:center;gap:8px}
+.bar-row-label{font-family:var(--mono);font-size:.55rem;color:var(--text-2);width:42px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:7px;background:var(--bg-3);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;transition:width .6s cubic-bezier(.16,1,.3,1)}
+.bar-val{font-family:var(--mono);font-size:.55rem;color:var(--text-1);width:52px;flex-shrink:0}
+
+/* ── FORM */
+.form-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:1.5rem;
+  position:relative;overflow:hidden;margin-bottom:1rem;
+}
+.form-card::after{
+  content:'';position:absolute;top:-60px;right:-60px;
+  width:160px;height:160px;
+  background:radial-gradient(circle,rgba(232,160,32,.06) 0%,transparent 70%);
+  pointer-events:none;
+}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:.85rem;margin-bottom:1.25rem}
+.form-group{display:flex;flex-direction:column;gap:5px}
+.form-group.full{grid-column:1/-1}
+
+label{font-family:var(--mono);font-size:.58rem;letter-spacing:.08em;color:var(--text-2);text-transform:uppercase}
+
+input,select,textarea{
+  background:var(--bg-2);border:1px solid var(--border);
+  border-radius:6px;color:var(--text-0);
+  font-family:var(--mono);font-size:.9rem;
+  padding:.6rem .75rem;transition:border-color .2s,box-shadow .2s;
+  width:100%;-webkit-appearance:none;
+  -webkit-text-size-adjust:100%;
+}
+input:focus,select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px rgba(232,160,32,.1)}
+input::placeholder{color:var(--text-2)}
+
+/* Make number inputs bigger touch targets on mobile */
+input[type=number]{font-size:1rem}
+
+.btn-submit{
+  width:100%;background:var(--accent);color:var(--bg-0);
+  border:none;border-radius:8px;padding:1rem;
+  font-family:var(--mono);font-size:.78rem;font-weight:700;
+  letter-spacing:.12em;cursor:pointer;text-transform:uppercase;
+  transition:background .2s,transform .1s,box-shadow .2s;
+  box-shadow:0 4px 20px rgba(232,160,32,.22);
+  -webkit-tap-highlight-color:transparent;
+  touch-action:manipulation;
+}
+.btn-submit:active{transform:scale(.98);background:#f0b030}
+
+/* ── LAST ENTRY */
+.last-entry-card{
+  background:var(--bg-card);border:1px solid var(--border);
+  border-radius:var(--radius-lg);padding:1.5rem;margin-top:1rem;
+}
+.entry-kv{display:flex;justify-content:space-between;align-items:baseline;gap:.75rem;margin-bottom:.5rem}
+.entry-kv:last-child{margin-bottom:0}
+.entry-kv-key{font-family:var(--mono);font-size:.58rem;color:var(--text-2);letter-spacing:.07em;text-transform:uppercase;flex-shrink:0}
+.entry-kv-val{font-family:var(--mono);font-size:.8rem;color:var(--text-0);text-align:right}
+.divider{height:1px;background:var(--border);margin:.75rem 0}
+
+/* ── HISTORY */
+.history-card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden}
+.history-header{padding:1rem 1.25rem;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.history-title{font-family:var(--mono);font-size:.68rem;color:var(--text-1);letter-spacing:.07em}
+.header-btns{display:flex;gap:6px}
+
+.btn-sm{
+  font-family:var(--mono);font-size:.55rem;letter-spacing:.08em;
+  background:none;border-radius:4px;padding:5px 9px;cursor:pointer;
+  transition:background .2s;touch-action:manipulation;
+}
+.btn-export{color:var(--accent);border:1px solid var(--accent-dim)}
+.btn-export:active{background:var(--accent-glow)}
+.btn-clear{color:var(--red);border:1px solid var(--red-dim)}
+.btn-clear:active{background:var(--red-dim)}
+
+/* Mobile-friendly history: cards instead of table on small screens */
+.history-mobile{display:flex;flex-direction:column;gap:0}
+.hist-entry{
+  border-bottom:1px solid var(--border);
+  padding:1rem 1.25rem;
+  transition:background .15s;
+}
+.hist-entry:last-child{border-bottom:none}
+.hist-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.6rem}
+.hist-num{font-family:var(--mono);font-size:.55rem;color:var(--text-2)}
+.hist-date{font-family:var(--mono);font-size:.75rem;color:var(--text-0)}
+.hist-betrag{font-family:var(--mono);font-size:1rem;font-weight:700;color:var(--accent)}
+.hist-row{display:flex;gap:1.25rem;flex-wrap:wrap;margin-bottom:.4rem}
+.hist-kv{display:flex;flex-direction:column;gap:2px}
+.hist-k{font-family:var(--mono);font-size:.5rem;color:var(--text-2);text-transform:uppercase;letter-spacing:.07em}
+.hist-v{font-family:var(--mono);font-size:.7rem;color:var(--text-1)}
+.hist-v.blue{color:var(--accent-2)}
+.hist-v.green{color:var(--green)}
+.hist-bottom{display:flex;justify-content:space-between;align-items:center;margin-top:.5rem}
+
+.td-delete{
+  font-family:var(--mono);font-size:.6rem;color:var(--text-2);
+  cursor:pointer;padding:4px 9px;border-radius:4px;
+  border:1px solid var(--border);
+  transition:color .2s,background .2s,border-color .2s;
+  touch-action:manipulation;
+}
+.td-delete:active{color:var(--red);background:var(--red-dim);border-color:var(--red-dim)}
+
+.fuel-badge{display:inline-block;padding:2px 7px;border-radius:3px;font-size:.58rem;font-family:var(--mono);font-weight:700;letter-spacing:.04em}
+.fuel-e5{background:rgba(59,142,207,.15);color:var(--accent-2)}
+.fuel-e10{background:rgba(45,186,116,.15);color:var(--green)}
+.fuel-diesel{background:rgba(232,160,32,.15);color:var(--accent)}
+.fuel-e85{background:rgba(224,90,90,.15);color:var(--red)}
+
+.empty-state{text-align:center;padding:2.5rem 1rem;color:var(--text-2);font-family:var(--mono);font-size:.68rem;letter-spacing:.05em;line-height:1.8}
+
+/* ── INSTALL BANNER */
+.install-banner{
+  display:none;
+  background:linear-gradient(135deg,rgba(232,160,32,.12),rgba(59,142,207,.08));
+  border:1px solid var(--accent-dim);border-radius:var(--radius-lg);
+  padding:1rem 1.25rem;margin-bottom:1.25rem;
+  align-items:center;gap:1rem;
+}
+.install-banner.show{display:flex}
+.install-banner-text{flex:1;font-family:var(--mono);font-size:.65rem;color:var(--text-1);line-height:1.6}
+.install-banner-text strong{color:var(--accent);display:block;margin-bottom:2px;font-size:.72rem}
+.btn-install{
+  background:var(--accent);color:var(--bg-0);border:none;border-radius:6px;
+  padding:.6rem 1rem;font-family:var(--mono);font-size:.65rem;font-weight:700;
+  letter-spacing:.1em;cursor:pointer;white-space:nowrap;flex-shrink:0;
+  touch-action:manipulation;
+}
+.btn-install-close{
+  background:none;border:none;color:var(--text-2);font-size:1rem;
+  cursor:pointer;padding:4px;touch-action:manipulation;
+}
+
+/* ── OFFLINE BADGE */
+.offline-badge{
+  display:none;
+  position:fixed;top:58px;left:0;right:0;z-index:99;
+  background:var(--red);color:var(--bg-0);
+  font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
+  text-align:center;padding:6px;
+}
+.offline-badge.show{display:block}
+
+/* ── TOAST */
+.toast{
+  position:fixed;bottom:calc(80px + var(--safe-bottom));right:1rem;
+  background:var(--green);color:var(--bg-0);
+  font-family:var(--mono);font-size:.7rem;font-weight:700;
+  letter-spacing:.1em;padding:.7rem 1.1rem;border-radius:8px;
+  z-index:999;transform:translateY(80px);opacity:0;
+  transition:transform .35s cubic-bezier(.16,1,.3,1),opacity .35s;
+  pointer-events:none;
+}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* ── COLORS util */
+.td-accent{color:var(--accent)}
+.td-blue{color:var(--accent-2)}
+.td-green{color:var(--green)}
+</style>
+</head>
+<body>
+
+<!-- OFFLINE INDICATOR -->
+<div class="offline-badge" id="offlineBadge">OFFLINE — DATEN LOKAL GESPEICHERT</div>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">⛽</div>
+    TANKLOG
+  </div>
+  <div class="header-meta">
+    <div id="headerDate">—</div>
+    <span id="headerCount">0 EINTRÄGE</span>
+  </div>
+</header>
+
+<!-- BOTTOM NAV -->
+<nav class="bottom-nav">
+  <button class="nav-btn active" id="nav-dashboard" onclick="showPage('dashboard')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+  <button class="nav-btn" id="nav-entry" onclick="showPage('entry')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+    Tanken
+  </button>
+  <button class="nav-btn" id="nav-history" onclick="showPage('history')">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><circle cx="4" cy="6" r="1.5" fill="currentColor"/><circle cx="4" cy="12" r="1.5" fill="currentColor"/><circle cx="4" cy="18" r="1.5" fill="currentColor"/></svg>
+    Verlauf
+  </button>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════════
+     PAGE: DASHBOARD
+════════════════════════════════════════════ -->
+<div class="page active" id="page-dashboard">
+
+  <!-- INSTALL BANNER -->
+  <div class="install-banner" id="installBanner">
+    <div class="install-banner-text">
+      <strong>ALS APP INSTALLIEREN</strong>
+      Jetzt zum Homescreen hinzufügen — funktioniert dann offline wie eine echte App.
+    </div>
+    <button class="btn-install" id="btnInstall">INSTALLIEREN</button>
+    <button class="btn-install-close" onclick="closeBanner()">✕</button>
+  </div>
+
+  <div class="section-label">Gesamtübersicht</div>
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card amber"><div class="stat-label">Gesamtkosten</div><div class="stat-value" id="s-total">CHF —</div><div class="stat-sub" id="s-total-sub">0 Tankfüllungen</div></div>
+    <div class="stat-card blue"><div class="stat-label">Gesamte KM</div><div class="stat-value" id="s-km">— km</div><div class="stat-sub" id="s-km-sub">seit erster Eingabe</div></div>
+    <div class="stat-card green"><div class="stat-label">CHF / km</div><div class="stat-value" id="s-chfkm">—</div><div class="stat-sub">Ø Kosten je Kilometer</div></div>
+    <div class="stat-card red"><div class="stat-label">km / CHF</div><div class="stat-value" id="s-kmchf">—</div><div class="stat-sub">Reichweite je Franken</div></div>
+    <div class="stat-card amber"><div class="stat-label">Liter getankt</div><div class="stat-value" id="s-liter">— L</div><div class="stat-sub" id="s-liter-sub">Ø Preis/L: —</div></div>
+    <div class="stat-card blue"><div class="stat-label">Ø Tankfüllung</div><div class="stat-value" id="s-avg-fill">CHF —</div><div class="stat-sub">pro Tankvorgang</div></div>
+    <div class="stat-card green"><div class="stat-label">Letzte km/L</div><div class="stat-value" id="s-kml">—</div><div class="stat-sub" id="s-kml-trend">Verbrauch letzte Strecke</div></div>
+    <div class="stat-card red"><div class="stat-label">Benzinpreis</div><div class="stat-value" id="s-preis">CHF —</div><div class="stat-sub" id="s-preis-diff">zuletzt eingetragen</div></div>
+  </div>
+
+  <div class="section-label">Verlauf (letzte 10)</div>
+  <div class="chart-card">
+    <div class="chart-title">// KOSTEN PRO TANKFÜLLUNG (CHF)</div>
+    <div class="bar-chart" id="costChart"><div class="empty-state" style="padding:.75rem">— keine Daten —</div></div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">// BENZINPREIS VERLAUF (CHF/L)</div>
+    <div class="bar-chart" id="priceChart"><div class="empty-state" style="padding:.75rem">— keine Daten —</div></div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: NEUER EINTRAG
+════════════════════════════════════════════ -->
+<div class="page" id="page-entry">
+
+  <div class="section-label">Neuer Tankstopp</div>
+
+  <div class="form-card">
+    <div class="form-grid">
+      <div class="form-group">
+        <label for="inDate">Datum</label>
+        <input type="date" id="inDate">
+      </div>
+      <div class="form-group">
+        <label for="inKm">KM-Stand</label>
+        <input type="number" id="inKm" placeholder="z.B. 42500" min="0" step="1" inputmode="numeric">
+      </div>
+      <div class="form-group">
+        <label for="inBetrag">Betrag (CHF)</label>
+        <input type="number" id="inBetrag" placeholder="z.B. 68.40" min="0" step="0.01" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label for="inPreis">Preis CHF/L</label>
+        <input type="number" id="inPreis" placeholder="z.B. 1.84" min="0" step="0.001" inputmode="decimal">
+      </div>
+      <div class="form-group">
+        <label for="inTank">Kraftstoff</label>
+        <select id="inTank">
+          <option value="E5">Benzin E5</option>
+          <option value="E10">Benzin E10</option>
+          <option value="Diesel">Diesel</option>
+          <option value="E85">E85 / Ethanol</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="inStation">Tankstelle</label>
+        <input type="text" id="inStation" placeholder="z.B. Shell Bern">
+      </div>
+      <div class="form-group full">
+        <label for="inNote">Notiz (optional)</label>
+        <input type="text" id="inNote" placeholder="Vollgetankt? Sonstiges...">
+      </div>
+    </div>
+    <button class="btn-submit" onclick="addEntry()">⌁ EINTRAG SPEICHERN</button>
+  </div>
+
+  <div class="last-entry-card" id="lastEntryCard">
+    <div class="section-label" style="margin-bottom:.75rem">Letzter Eintrag</div>
+    <div class="empty-state" style="padding:1.5rem 0" id="lastEntryEmpty">Noch kein Eintrag vorhanden</div>
+    <div id="lastEntryData" style="display:none">
+      <div class="entry-kv"><span class="entry-kv-key">Datum</span><span class="entry-kv-val" id="le-date">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">KM-Stand</span><span class="entry-kv-val" id="le-km">—</span></div>
+      <div class="divider"></div>
+      <div class="entry-kv"><span class="entry-kv-key">Betrag</span><span class="entry-kv-val td-accent" id="le-betrag">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">Liter</span><span class="entry-kv-val td-blue" id="le-liter">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">Preis/L</span><span class="entry-kv-val" id="le-preis">—</span></div>
+      <div class="divider"></div>
+      <div class="entry-kv"><span class="entry-kv-key">Strecke seit letztem</span><span class="entry-kv-val" id="le-strecke">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">CHF / km</span><span class="entry-kv-val td-green" id="le-chfkm">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">km / L</span><span class="entry-kv-val td-green" id="le-kml">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">Tankstelle</span><span class="entry-kv-val" id="le-station">—</span></div>
+      <div class="entry-kv"><span class="entry-kv-key">Kraftstoff</span><span class="entry-kv-val" id="le-fuel">—</span></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════════════════════
+     PAGE: VERLAUF
+════════════════════════════════════════════ -->
+<div class="page" id="page-history">
+
+  <div class="history-card">
+    <div class="history-header">
+      <span class="history-title">// TANKPROTOKOLL</span>
+      <div class="header-btns">
+        <button class="btn-sm btn-export" onclick="exportCSV()">↓ CSV</button>
+        <button class="btn-sm btn-clear" onclick="clearAll()">✕ LÖSCHEN</button>
+      </div>
+    </div>
+    <div class="history-mobile" id="historyBody">
+      <div class="empty-state">Noch keine Einträge.<br>Tippe auf <strong style="color:var(--accent)">Tanken</strong> um zu starten.</div>
+    </div>
+  </div>
+
+</div>
+
+</main>
+
+<div class="toast" id="toast">✓ GESPEICHERT</div>
+
+<script>
+// ══════════════════════════════════════════
+// PWA SETUP — inline Service Worker + Manifest
+// ══════════════════════════════════════════
+
+// 1. Web App Manifest (injected dynamically)
+const manifest = {
+  name: "TANKLOG - Kraftstoff Tracker",
+  short_name: "TANKLOG",
+  description: "Tankkosten, km-Verbrauch und Benzinpreis tracken",
+  start_url: "./",
+  display: "standalone",
+  orientation: "portrait-primary",
+  background_color: "#080b0f",
+  theme_color: "#080b0f",
+  icons: [
+    { src: generateIcon(192), sizes: "192x192", type: "image/png", purpose: "any maskable" },
+    { src: generateIcon(512), sizes: "512x512", type: "image/png", purpose: "any maskable" }
+  ]
+};
+
+function generateIcon(size) {
+  // Generate a simple canvas icon as data URL
+  const canvas = document.createElement('canvas');
+  canvas.width = size; canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  // Background
+  ctx.fillStyle = '#080b0f';
+  ctx.fillRect(0, 0, size, size);
+  // Hexagon-ish shape
+  ctx.fillStyle = '#e8a020';
+  const cx = size/2, cy = size/2, r = size*0.38;
+  ctx.beginPath();
+  for(let i=0;i<8;i++){
+    const angle = (Math.PI*2/8)*i - Math.PI/8;
+    const x = cx + r*Math.cos(angle);
+    const y = cy + r*Math.sin(angle);
+    i===0 ? ctx.moveTo(x,y) : ctx.lineTo(x,y);
+  }
+  ctx.closePath();
+  ctx.fill();
+  // Fuel symbol text
+  ctx.fillStyle = '#080b0f';
+  ctx.font = `bold ${size*0.38}px serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('⛽', cx, cy+size*0.02);
+  return canvas.toDataURL('image/png');
+}
+
+// Inject manifest link
+const manifestBlob = new Blob([JSON.stringify(manifest)], {type:'application/manifest+json'});
+const manifestURL = URL.createObjectURL(manifestBlob);
+const mLink = document.createElement('link');
+mLink.rel = 'manifest'; mLink.href = manifestURL;
+document.head.appendChild(mLink);
+
+// 2. Service Worker (inline as blob)
+const swCode = `
+const CACHE = 'tanklog-v1';
+const ASSETS = ['/'];
+
+self.addEventListener('install', e => {
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  // Network first, fallback to cache
+  e.respondWith(
+    fetch(e.request).catch(() => caches.match(e.request))
+  );
+});
+`;
+
+if ('serviceWorker' in navigator) {
+  const swBlob = new Blob([swCode], {type:'application/javascript'});
+  const swURL  = URL.createObjectURL(swBlob);
+  navigator.serviceWorker.register(swURL, {scope: './'}).catch(()=>{});
+}
+
+// 3. Install prompt
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e => {
+  e.preventDefault();
+  deferredPrompt = e;
+  document.getElementById('installBanner').classList.add('show');
+});
+
+document.getElementById('btnInstall').addEventListener('click', async () => {
+  if (!deferredPrompt) return;
+  deferredPrompt.prompt();
+  const result = await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBanner').classList.remove('show');
+});
+
+function closeBanner() {
+  document.getElementById('installBanner').classList.remove('show');
+  deferredPrompt = null;
+}
+
+window.addEventListener('appinstalled', () => {
+  document.getElementById('installBanner').classList.remove('show');
+  showToast('APP INSTALLIERT!');
+});
+
+// 4. Offline indicator
+window.addEventListener('online',  () => document.getElementById('offlineBadge').classList.remove('show'));
+window.addEventListener('offline', () => document.getElementById('offlineBadge').classList.add('show'));
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+function showPage(name) {
+  ['dashboard','entry','history'].forEach(p => {
+    document.getElementById('page-'+p).classList.remove('active');
+    document.getElementById('nav-'+p).classList.remove('active');
+  });
+  document.getElementById('page-'+name).classList.add('active');
+  document.getElementById('nav-'+name).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
+  if (name==='history') renderHistory(load());
+}
+
+// ══════════════════════════════════════════
+// STORAGE
+// ══════════════════════════════════════════
+const STORE = 'tanklog_v2';
+function load() { try { return JSON.parse(localStorage.getItem(STORE)) || []; } catch { return []; } }
+function save(data) { localStorage.setItem(STORE, JSON.stringify(data)); }
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+const fmt  = (n,d=2)  => (n!=null && !isNaN(n)) ? (+n).toFixed(d) : '—';
+const fmtN = (n,d=0)  => (n!=null && !isNaN(n)) ? Number(n).toLocaleString('de-CH',{minimumFractionDigits:d,maximumFractionDigits:d}) : '—';
+function fmtDate(s) { if(!s)return'—'; const [y,m,d]=s.split('-'); return `${d}.${m}.${y}`; }
+function fuelBadge(t) {
+  const m={E5:'fuel-e5',E10:'fuel-e10',Diesel:'fuel-diesel',E85:'fuel-e85'};
+  return `<span class="fuel-badge ${m[t]||''}">${t||'—'}</span>`;
+}
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+function showToast(msg='✓ GESPEICHERT') {
+  const t=document.getElementById('toast');
+  t.textContent=msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+// ══════════════════════════════════════════
+// ADD ENTRY
+// ══════════════════════════════════════════
+function addEntry() {
+  const date   =document.getElementById('inDate').value;
+  const km     =parseFloat(document.getElementById('inKm').value);
+  const betrag =parseFloat(document.getElementById('inBetrag').value);
+  const preis  =parseFloat(document.getElementById('inPreis').value);
+  const tank   =document.getElementById('inTank').value;
+  const station=document.getElementById('inStation').value.trim();
+  const note   =document.getElementById('inNote').value.trim();
+
+  if(!date || isNaN(km) || isNaN(betrag) || isNaN(preis) || preis<=0) {
+    alert('Datum, KM-Stand, Betrag und Benzinpreis sind Pflichtfelder.');
+    return;
+  }
+
+  const liter = betrag/preis;
+  const data  = load();
+  let strecke = null;
+  if(data.length>0){ const prev=data[data.length-1]; if(km>prev.km) strecke=km-prev.km; }
+
+  data.push({ id:Date.now(), date, km, betrag, preis, liter, tank, station, note, strecke });
+  save(data);
+
+  document.getElementById('inKm').value='';
+  document.getElementById('inBetrag').value='';
+  document.getElementById('inPreis').value='';
+  document.getElementById('inNote').value='';
+  document.getElementById('inStation').value='';
+
+  render();
+  showToast('⌁ EINTRAG GESPEICHERT');
+  // scroll back to show last entry
+  setTimeout(()=>document.getElementById('lastEntryCard').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+// ══════════════════════════════════════════
+// DELETE / CLEAR
+// ══════════════════════════════════════════
+function deleteEntry(id) {
+  if(!confirm('Eintrag löschen?')) return;
+  save(load().filter(e=>e.id!==id));
+  render();
+  if(document.getElementById('page-history').classList.contains('active')) renderHistory(load());
+}
+
+function clearAll() {
+  if(confirm('Alle Einträge unwiderruflich löschen?')) { save([]); render(); }
+}
+
+// ══════════════════════════════════════════
+// EXPORT CSV
+// ══════════════════════════════════════════
+function exportCSV() {
+  const data=load();
+  if(!data.length) return alert('Keine Daten zum Exportieren.');
+  const hdr=['Datum','KM-Stand','Strecke (km)','Betrag (CHF)','Liter','CHF/L','CHF/km','km/L','Tankart','Station','Notiz'];
+  const rows=data.map(e=>[
+    e.date, e.km,
+    e.strecke!=null?e.strecke:'',
+    fmt(e.betrag), fmt(e.liter,3), fmt(e.preis,3),
+    e.strecke?fmt(e.betrag/e.strecke,4):'',
+    e.strecke&&e.liter?fmt(e.strecke/e.liter,2):'',
+    e.tank, e.station, e.note
+  ]);
+  const csv=[hdr,...rows].map(r=>r.map(v=>`"${v}"`).join(';')).join('\n');
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
+  a.download='tanklog_export.csv';
+  a.click();
+}
+
+// ══════════════════════════════════════════
+// RENDER
+// ══════════════════════════════════════════
+function render() {
+  const data=load();
+  renderHeader(data);
+  renderStats(data);
+  renderLastEntry(data);
+  renderCharts(data);
+}
+
+function renderHeader(data) {
+  document.getElementById('headerDate').textContent =
+    new Date().toLocaleDateString('de-CH',{day:'2-digit',month:'short',year:'numeric'}).toUpperCase();
+  document.getElementById('headerCount').textContent =
+    `${data.length} EINTR${data.length===1?'AG':'ÄGE'}`;
+}
+
+function renderStats(data) {
+  if(!data.length) return;
+  const totalChf=data.reduce((s,e)=>s+e.betrag,0);
+  const totalL  =data.reduce((s,e)=>s+e.liter,0);
+  const fills   =data.length;
+  const firstKm =data[0].km, lastKm=data[data.length-1].km;
+  const totalKm =lastKm>firstKm?lastKm-firstKm:null;
+  const chfKm   =totalKm?totalChf/totalKm:null;
+  const kmChf   =totalKm?totalKm/totalChf:null;
+  const last    =data[data.length-1];
+  const prev    =data.length>1?data[data.length-2]:null;
+  const diff    =prev?last.preis-prev.preis:0;
+
+  let lastKml=null, lastSt=null;
+  for(let i=data.length-1;i>=0;i--){
+    if(data[i].strecke!=null&&data[i].liter>0){ lastKml=data[i].strecke/data[i].liter; lastSt=data[i].strecke; break; }
+  }
+
+  document.getElementById('s-total').textContent    =`CHF ${fmtN(totalChf,2)}`;
+  document.getElementById('s-total-sub').textContent=`${fills} Tankfüllung${fills>1?'en':''}`;
+  document.getElementById('s-km').textContent       =totalKm?`${fmtN(totalKm)} km`:'— km';
+  document.getElementById('s-km-sub').textContent   =totalKm?`${fmtN(firstKm)}→${fmtN(lastKm)}`:'nur 1 Eintrag';
+  document.getElementById('s-chfkm').textContent    =chfKm?fmt(chfKm,4):'—';
+  document.getElementById('s-kmchf').textContent    =kmChf?fmt(kmChf,2):'—';
+  document.getElementById('s-liter').textContent    =`${fmt(totalL,1)} L`;
+  document.getElementById('s-liter-sub').textContent=`Ø CHF ${fmt(totalChf/totalL,3)}/L`;
+  document.getElementById('s-avg-fill').textContent =`CHF ${fmt(totalChf/fills,2)}`;
+  document.getElementById('s-kml').textContent      =lastKml?`${fmt(lastKml,1)}`:'—';
+  document.getElementById('s-kml-trend').textContent=lastSt?`letzte ${fmtN(lastSt)} km`:'noch keine Strecke';
+  document.getElementById('s-preis').textContent    =`CHF ${fmt(last.preis,3)}`;
+  if(prev){
+    const sign=diff>0?'+':'';
+    const el=document.getElementById('s-preis-diff');
+    el.textContent=`${sign}${fmt(diff,3)} vs. vorher`;
+    el.style.color=diff>0?'var(--red)':diff<0?'var(--green)':'var(--text-2)';
+  }
+}
+
+function renderLastEntry(data) {
+  if(!data.length){
+    document.getElementById('lastEntryEmpty').style.display='';
+    document.getElementById('lastEntryData').style.display='none';
+    return;
+  }
+  document.getElementById('lastEntryEmpty').style.display='none';
+  document.getElementById('lastEntryData').style.display='';
+  const e=data[data.length-1];
+  document.getElementById('le-date').textContent   =fmtDate(e.date);
+  document.getElementById('le-km').textContent     =fmtN(e.km)+' km';
+  document.getElementById('le-betrag').textContent ='CHF '+fmt(e.betrag,2);
+  document.getElementById('le-liter').textContent  =fmt(e.liter,2)+' L';
+  document.getElementById('le-preis').textContent  ='CHF '+fmt(e.preis,3)+'/L';
+  document.getElementById('le-strecke').textContent=e.strecke!=null?fmtN(e.strecke)+' km':'— (1. Eintrag)';
+  document.getElementById('le-chfkm').textContent  =e.strecke?fmt(e.betrag/e.strecke,4)+' CHF/km':'—';
+  document.getElementById('le-kml').textContent    =(e.strecke&&e.liter)?fmt(e.strecke/e.liter,2)+' km/L':'—';
+  document.getElementById('le-station').textContent=e.station||'—';
+  document.getElementById('le-fuel').innerHTML     =fuelBadge(e.tank);
+}
+
+function renderHistory(data) {
+  const el=document.getElementById('historyBody');
+  if(!data.length){
+    el.innerHTML=`<div class="empty-state">Noch keine Einträge.<br>Tippe auf <strong style="color:var(--accent)">Tanken</strong> um zu starten.</div>`;
+    return;
+  }
+  el.innerHTML=[...data].reverse().map((e,i)=>{
+    const n   =data.length-i;
+    const chfkm=e.strecke?e.betrag/e.strecke:null;
+    const kml  =(e.strecke&&e.liter)?e.strecke/e.liter:null;
+    return `<div class="hist-entry">
+      <div class="hist-top">
+        <div>
+          <div class="hist-num">#${n}</div>
+          <div class="hist-date">${fmtDate(e.date)}</div>
+        </div>
+        <div style="text-align:right">
+          <div class="hist-betrag">CHF ${fmt(e.betrag,2)}</div>
+          <div style="margin-top:3px">${fuelBadge(e.tank)}</div>
+        </div>
+      </div>
+      <div class="hist-row">
+        <div class="hist-kv"><span class="hist-k">KM-Stand</span><span class="hist-v">${fmtN(e.km)} km</span></div>
+        ${e.strecke!=null?`<div class="hist-kv"><span class="hist-k">Strecke</span><span class="hist-v blue">${fmtN(e.strecke)} km</span></div>`:''}
+        <div class="hist-kv"><span class="hist-k">Liter</span><span class="hist-v">${fmt(e.liter,2)} L</span></div>
+        <div class="hist-kv"><span class="hist-k">CHF/L</span><span class="hist-v">${fmt(e.preis,3)}</span></div>
+        ${chfkm?`<div class="hist-kv"><span class="hist-k">CHF/km</span><span class="hist-v green">${fmt(chfkm,4)}</span></div>`:''}
+        ${kml?`<div class="hist-kv"><span class="hist-k">km/L</span><span class="hist-v green">${fmt(kml,1)}</span></div>`:''}
+        ${e.station?`<div class="hist-kv"><span class="hist-k">Station</span><span class="hist-v">${e.station}</span></div>`:''}
+      </div>
+      <div class="hist-bottom">
+        <span style="font-family:var(--mono);font-size:.6rem;color:var(--text-2)">${e.note||''}</span>
+        <span class="td-delete" onclick="deleteEntry(${e.id})">✕ LÖSCHEN</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderCharts(data) {
+  barChart('costChart',  data, 'betrag', 'var(--accent)',   v=>`CHF ${v.toFixed(2)}`);
+  barChart('priceChart', data, 'preis',  'var(--accent-2)', v=>`${v.toFixed(3)}`);
+}
+
+function barChart(id, data, key, color, lFn) {
+  const el=document.getElementById(id);
+  if(!data.length){ el.innerHTML=`<div class="empty-state" style="padding:.5rem">— keine Daten —</div>`; return; }
+  const slice=data.slice(-10);
+  const max=Math.max(...slice.map(e=>e[key]));
+  el.innerHTML=slice.map(e=>{
+    const pct=max>0?e[key]/max*100:0;
+    const lbl=e.date?e.date.slice(5).replace('-','/'):'?';
+    return `<div class="bar-row">
+      <div class="bar-row-label">${lbl}</div>
+      <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${color}"></div></div>
+      <div class="bar-val">${lFn(e[key])}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════
+document.getElementById('inDate').value = new Date().toISOString().split('T')[0];
+render();
+</script>
+</body>
+</html>
